@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Trace Debugger Bridge",
+  "version": "0.1.0",
+  "description": "Scrape the current ChatGPT or Claude conversation and open it in Trace Debugger.",
+  "permissions": ["activeTab", "tabs", "scripting"],
+  "host_permissions": ["https://chatgpt.com/*", "https://claude.ai/*"],
+  "action": {
+    "default_title": "Trace Debugger Bridge",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*", "https://claude.ai/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

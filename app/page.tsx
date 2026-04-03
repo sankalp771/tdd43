@@ -1,7 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { traceSamples } from "@/lib/samples";
 import {
@@ -170,6 +171,7 @@ function extractPuterText(
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [title, setTitle] = useState(emptyTitle);
   const [trace, setTrace] = useState(emptyTrace);
   const [selectedSampleId, setSelectedSampleId] = useState(traceSamples[0]?.id ?? "");
@@ -197,7 +199,7 @@ export default function Home() {
     setError(null);
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -243,7 +245,33 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [title, trace]);
+
+  useEffect(() => {
+    const importedTrace = searchParams.get("trace");
+    const importedTitle = searchParams.get("title");
+    const shouldAnalyze = searchParams.get("analyze") === "1";
+
+    if (!importedTrace) {
+      return;
+    }
+
+    setSelectedSampleId("");
+    setTitle(importedTitle || "Imported trace");
+    setTrace(importedTrace);
+    setResult(null);
+    setError(null);
+
+    if (!shouldAnalyze) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void handleAnalyze();
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [handleAnalyze, searchParams]);
 
   return (
     <main className="min-h-screen bg-stone-950 text-stone-100">
@@ -311,6 +339,9 @@ export default function Home() {
                     {sample.label}
                   </option>
                 ))}
+                <option value="" disabled>
+                  Imported trace
+                </option>
               </select>
             </div>
 
