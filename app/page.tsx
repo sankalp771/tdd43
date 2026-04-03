@@ -189,6 +189,12 @@ export default function Home() {
     );
   }, [result]);
 
+  const clearSampleSelectionForManualEdit = () => {
+    if (!isImportedTrace && selectedSampleId) {
+      setSelectedSampleId("");
+    }
+  };
+
   const handleLoadSample = (sampleId: string) => {
     const sample = traceSamples.find((entry) => entry.id === sampleId);
     if (!sample) return;
@@ -343,6 +349,7 @@ export default function Home() {
                   onChange={(event) => handleLoadSample(event.target.value)}
                   className="rounded-full border border-stone-700 bg-stone-950 px-4 py-2 text-sm text-stone-200 outline-none transition focus:border-amber-300"
                 >
+                  <option value="">Custom trace</option>
                   {traceSamples.map((sample) => (
                     <option key={sample.id} value={sample.id}>
                       {sample.label}
@@ -360,6 +367,7 @@ export default function Home() {
                 <input
                   value={title}
                   onChange={(event) => {
+                    clearSampleSelectionForManualEdit();
                     setTitle(event.target.value);
                   }}
                   placeholder="AcmeCloud pricing lookup"
@@ -374,6 +382,7 @@ export default function Home() {
                 <textarea
                   value={trace}
                   onChange={(event) => {
+                    clearSampleSelectionForManualEdit();
                     setTrace(event.target.value);
                   }}
                   placeholder="Paste the full agent run here..."
