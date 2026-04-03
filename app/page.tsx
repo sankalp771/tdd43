@@ -175,6 +175,7 @@ export default function Home() {
   const [title, setTitle] = useState(emptyTitle);
   const [trace, setTrace] = useState(emptyTrace);
   const [selectedSampleId, setSelectedSampleId] = useState(traceSamples[0]?.id ?? "");
+  const [isImportedTrace, setIsImportedTrace] = useState(false);
   const [result, setResult] = useState<AnalyzeTraceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -192,6 +193,7 @@ export default function Home() {
     const sample = traceSamples.find((entry) => entry.id === sampleId);
     if (!sample) return;
 
+    setIsImportedTrace(false);
     setSelectedSampleId(sample.id);
     setTitle(sample.title);
     setTrace(sample.trace);
@@ -256,6 +258,7 @@ export default function Home() {
       return;
     }
 
+    setIsImportedTrace(true);
     setSelectedSampleId("");
     setTitle(importedTitle || "Imported trace");
     setTrace(importedTrace);
@@ -328,21 +331,25 @@ export default function Home() {
                 <p className="mt-1 text-sm text-stone-400">
                   Paste a transcript, tool log, or raw JSON trace.
                 </p>
+                {isImportedTrace ? (
+                  <p className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-300/80">
+                    Source: Imported from extension
+                  </p>
+                ) : null}
               </div>
-              <select
-                value={selectedSampleId}
-                onChange={(event) => handleLoadSample(event.target.value)}
-                className="rounded-full border border-stone-700 bg-stone-950 px-4 py-2 text-sm text-stone-200 outline-none transition focus:border-amber-300"
-              >
-                {traceSamples.map((sample) => (
-                  <option key={sample.id} value={sample.id}>
-                    {sample.label}
-                  </option>
-                ))}
-                <option value="" disabled>
-                  Imported trace
-                </option>
-              </select>
+              {isImportedTrace ? null : (
+                <select
+                  value={selectedSampleId}
+                  onChange={(event) => handleLoadSample(event.target.value)}
+                  className="rounded-full border border-stone-700 bg-stone-950 px-4 py-2 text-sm text-stone-200 outline-none transition focus:border-amber-300"
+                >
+                  {traceSamples.map((sample) => (
+                    <option key={sample.id} value={sample.id}>
+                      {sample.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -352,7 +359,9 @@ export default function Home() {
                 </span>
                 <input
                   value={title}
-                  onChange={(event) => setTitle(event.target.value)}
+                  onChange={(event) => {
+                    setTitle(event.target.value);
+                  }}
                   placeholder="AcmeCloud pricing lookup"
                   className="w-full rounded-2xl border border-stone-700 bg-stone-950 px-4 py-3 text-sm text-stone-100 outline-none transition placeholder:text-stone-500 focus:border-amber-300"
                 />
@@ -364,7 +373,9 @@ export default function Home() {
                 </span>
                 <textarea
                   value={trace}
-                  onChange={(event) => setTrace(event.target.value)}
+                  onChange={(event) => {
+                    setTrace(event.target.value);
+                  }}
                   placeholder="Paste the full agent run here..."
                   className="min-h-[420px] w-full rounded-3xl border border-stone-700 bg-stone-950 px-4 py-4 font-mono text-sm leading-6 text-stone-100 outline-none transition placeholder:text-stone-500 focus:border-amber-300"
                 />
