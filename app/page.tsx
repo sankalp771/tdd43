@@ -1,6 +1,5 @@
 "use client";
 
-import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -59,6 +58,11 @@ Your job is to analyze a trace of an agent execution and identify likely failure
 Rules:
 - Use only the provided trace.
 - Do not invent missing steps, tools, or hidden intentions.
+- Treat this as a debugger for the visible trace only.
+- If the conversation appears to reference attachments, images, files, screenshots, or hidden tool context that are not present in the visible trace, explicitly treat the trace as potentially incomplete.
+- In those cases, prefer "missing_context" or cautious wording over claiming the assistant definitely hallucinated.
+- Do not say an attachment was empty, ignored, or unseen unless the trace explicitly proves that.
+- Do not say the assistant falsely claimed to see an image if the trace suggests an image may have existed outside the scraped text.
 - Every finding must be supported by direct evidence from the trace.
 - Prefer specific, practical explanations over vague commentary.
 - If the trace is incomplete or ambiguous, say so clearly in traceQuality.notes and lower confidence.
@@ -94,8 +98,18 @@ function confidenceLabel(confidence: number) {
   return "Low confidence";
 }
 
-function buildPrompt(trace: string, title?: string) {
+function buildPrompt(trace: string, title?: string, attachmentAware = false) {
   return `${systemPrompt}
+
+${attachmentAware
+  ? `Attachment-aware mode:
+- This imported trace may reference attachments, images, screenshots, or files that were available to the original assistant but are not fully represented in the scraped visible text.
+- Assume the assistant may have had access to that attachment context.
+- Evaluate the quality of the assistant's response under that assumption.
+- Do not treat missing scraped media by itself as proof of hallucination.
+- Focus on whether the answer is helpful, overconfident, poorly justified, instruction-misaligned, or otherwise weak on the visible evidence you do have.
+- Only use "hallucinated_assumption" if the answer clearly invents details that are unsupported even after assuming the referenced attachment context existed.`
+  : ""}
 
 Analyze the following agent trace and return a JSON object with this exact structure:
 
@@ -138,6 +152,8 @@ Requirements:
 - Every finding must reference at least one evidence item by id.
 - Suggested fixes must be concrete and testable.
 - If the trace is too incomplete to support a strong conclusion, reflect that in confidence and traceQuality.
+- If the trace references missing attachments, images, screenshots, or external context, explicitly mention that the diagnosis is based only on the visible trace.
+- In that situation, avoid claiming the assistant definitely hallucinated unless the text itself independently proves fabrication beyond the missing context.
 
 Title: ${title ?? "Untitled trace"}
 
@@ -180,6 +196,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [puterReady, setPuterReady] = useState(false);
+  const [puterFailed, setPuterFailed] = useState(false);
 
   const suggestedFixes = useMemo(() => {
     if (!result) return [];
@@ -216,11 +233,14 @@ export default function Home() {
         throw new Error("Puter is not loaded yet. Wait a second and try again.");
       }
 
-      const rawResponse = await window.puter.ai.chat(buildPrompt(trace, title), {
+      const rawResponse = await window.puter.ai.chat(
+        buildPrompt(trace, title, isImportedTrace),
+        {
         model,
         temperature: 0.2,
         max_tokens: 1400,
-      });
+        },
+      );
 
       const text = extractPuterText(rawResponse).trim();
 
@@ -253,7 +273,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [title, trace]);
+  }, [isImportedTrace, title, trace]);
 
   useEffect(() => {
     const importedTrace = searchParams.get("trace");
@@ -282,14 +302,66 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [handleAnalyze, searchParams]);
 
+  useEffect(() => {
+    if (window.puter?.ai?.chat) {
+      setPuterReady(true);
+      setPuterFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+    let readinessChecks = 0;
+
+    const existingScript = document.querySelector(
+      'script[data-trace-debugger-puter="true"]',
+    );
+
+    const markReady = () => {
+      if (!cancelled) {
+        setPuterReady(true);
+        setPuterFailed(false);
+      }
+    };
+
+    const markFailed = () => {
+      if (!cancelled) {
+        setPuterReady(false);
+        setPuterFailed(true);
+      }
+    };
+
+    const pollReady = window.setInterval(() => {
+      if (window.puter?.ai?.chat) {
+        window.clearInterval(pollReady);
+        markReady();
+        return;
+      }
+
+      readinessChecks += 1;
+      if (readinessChecks >= 20) {
+        window.clearInterval(pollReady);
+        markFailed();
+      }
+    }, 500);
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = "https://js.puter.com/v2/";
+      script.async = true;
+      script.dataset.traceDebuggerPuter = "true";
+      script.onload = markReady;
+      script.onerror = markFailed;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(pollReady);
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-stone-950 text-stone-100">
-      <Script
-        src="https://js.puter.com/v2/"
-        strategy="afterInteractive"
-        onLoad={() => setPuterReady(true)}
-      />
-
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
         <section className="overflow-hidden rounded-3xl border border-stone-800 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.2),_transparent_30%),linear-gradient(135deg,_rgba(28,25,23,0.96),_rgba(12,10,9,1))] p-8 shadow-2xl shadow-amber-500/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -307,6 +379,11 @@ export default function Home() {
               <p className="mt-2 text-sm text-stone-400">
                 Client-side analysis via Puter.js using <code>{model}</code>.
               </p>
+              {puterFailed ? (
+                <p className="mt-2 text-sm text-amber-300">
+                  Puter failed to load from the CDN. Refresh once, or check whether the browser is blocking `js.puter.com`.
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -316,7 +393,13 @@ export default function Home() {
                 disabled={isLoading || !trace.trim() || !puterReady}
                 className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-stone-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isLoading ? "Analyzing..." : puterReady ? "Analyze Trace" : "Loading Puter..."}
+                {isLoading
+                  ? "Analyzing..."
+                  : puterReady
+                    ? "Analyze Trace"
+                    : puterFailed
+                      ? "Puter Unavailable"
+                      : "Loading Puter..."}
               </button>
               <button
                 type="button"
@@ -338,9 +421,17 @@ export default function Home() {
                   Paste a transcript, tool log, or raw JSON trace.
                 </p>
                 {isImportedTrace ? (
-                  <p className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-300/80">
-                    Source: Imported from extension
-                  </p>
+                  <>
+                    <p className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-300/80">
+                      Source: Imported from extension
+                    </p>
+                    <p className="mt-2 max-w-xl text-xs leading-6 text-stone-400">
+                      Attachment-aware mode is active. This imported trace may rely on files,
+                      images, screenshots, or hidden context not fully shown here, so analysis
+                      assumes the original assistant had access to that attachment context and
+                      evaluates the visible response accordingly.
+                    </p>
+                  </>
                 ) : null}
               </div>
               {isImportedTrace ? null : (
