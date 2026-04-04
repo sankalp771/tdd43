@@ -1,3 +1,4 @@
+//works as  cHROME extension content script to scrape conversation data from ChatGPT and Claude web interfaces. It listens for messages of type "TRACE_DEBUGGER_SCRAPE" and responds with the scraped conversation data, including the source, title, message count, and the trace of messages in a formatted string.
 function cleanText(value) {
   return (value || "").replace(/\u00a0/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }

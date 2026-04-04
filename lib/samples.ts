@@ -1,3 +1,4 @@
+// This file defines a set of sample traces for testing and demonstration purposes in the trace debugger application. Each trace sample includes an ID, label, title, and a string representation of the trace that simulates a conversation between a user and an agent, including tool calls and outputs. These samples cover various common failure modes in agent interactions, such as hallucinated information, wrong tool choices, stopping too early, missing context, instruction misreads, ignoring tool output, bad planning, and format mismatches.
 export type TraceSample = {
   id: string;
   label: string;
