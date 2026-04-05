@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Trace Debugger",
-  description: "Analyze agent traces, detect likely failure modes, and surface evidence-backed fixes.",
+  description:
+    "Debug AI coding and technical assistant traces with evidence-backed failure analysis and actionable fixes.",
 };
 
 export default function RootLayout({

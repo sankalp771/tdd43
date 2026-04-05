@@ -51,9 +51,11 @@ const modeLabels: Record<FailureMode, string> = {
   tool_output_ignored: "Tool output ignored",
 };
 
-const systemPrompt = `You are an expert debugger for AI agent runs.
+const systemPrompt = `You are a senior AI reliability engineer and cross-stack technical reviewer for agentic software systems.
 
-Your job is to analyze a trace of an agent execution and identify likely failure modes.
+You specialize in debugging AI coding agents, developer assistants, and technical workflows across frontend, backend, infra, APIs, databases, DevOps, and tooling. You think like an experienced engineer reviewing a real production trace: grounded, skeptical, evidence-first, and focused on what would actually break in practice.
+
+Your job is to analyze a trace of an agent execution and identify likely failure modes, explain why they matter, and suggest the most practical fixes.
 
 Rules:
 - Use only the provided trace.
@@ -64,7 +66,8 @@ Rules:
 - Do not say an attachment was empty, ignored, or unseen unless the trace explicitly proves that.
 - Do not say the assistant falsely claimed to see an image if the trace suggests an image may have existed outside the scraped text.
 - Every finding must be supported by direct evidence from the trace.
-- Prefer specific, practical explanations over vague commentary.
+- Prefer specific, technical, practical explanations over vague commentary.
+- Focus on engineering usefulness: what failed, why it failed, what risk it creates, and how to fix it.
 - If the trace is incomplete or ambiguous, say so clearly in traceQuality.notes and lower confidence.
 - Suggested fixes must be actionable changes to prompts, workflow, tool policy, or output validation.
 - Return valid JSON only.
@@ -370,11 +373,12 @@ export default function Home() {
                 Trace Debugger
               </p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-50 sm:text-5xl">
-                Paste an agent run. Find the failure mode, evidence, and fix.
+                Debug AI coding traces. Find the failure mode, evidence, and fix.
               </h1>
               <p className="mt-4 max-w-xl text-base leading-7 text-stone-300">
-                A lightweight debugger for AI agent failures. Drop in a transcript
-                or tool trace and get a root-cause report you can actually act on.
+                A lightweight debugger for AI coding and technical assistant failures.
+                Drop in a transcript or tool trace and get a root-cause report you can
+                actually act on.
               </p>
               <p className="mt-2 text-sm text-stone-400">
                 Client-side analysis via Puter.js using <code>{model}</code>.
@@ -418,7 +422,7 @@ export default function Home() {
               <div>
                 <h2 className="text-xl font-semibold text-stone-50">Trace Input</h2>
                 <p className="mt-1 text-sm text-stone-400">
-                  Paste a transcript, tool log, or raw JSON trace.
+                  Paste a coding transcript, technical chat, tool log, or raw JSON trace.
                 </p>
                 {isImportedTrace ? (
                   <>
@@ -507,7 +511,7 @@ export default function Home() {
                   ? error
                   : result
                     ? result.summary
-                    : "Run an analysis to generate a concise summary, likely root cause, and practical fixes."}
+                    : "Run an analysis to generate a concise diagnosis of the technical trace, likely root cause, and practical fixes."}
               </p>
 
               {result ? (
@@ -552,7 +556,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="rounded-2xl border border-dashed border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-500">
-                    Your findings will show up here with severity and confidence.
+                    Technical failure findings will show up here with severity and confidence.
                   </div>
                 )}
               </div>
@@ -586,7 +590,7 @@ export default function Home() {
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-500">
-                  Short evidence snippets will be quoted directly from the trace.
+                  Short evidence snippets will be quoted directly from the technical trace.
                 </div>
               )}
             </div>
@@ -607,7 +611,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="rounded-2xl border border-dashed border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-500">
-                    Concrete workflow, prompt, and validation fixes will appear here.
+                    Concrete workflow, prompt, tool-usage, and validation fixes will appear here.
                   </div>
                 )}
               </div>
@@ -631,7 +635,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="mt-5 rounded-2xl border border-dashed border-stone-800 bg-stone-950/60 p-4 text-sm text-stone-500">
-                  This section flags whether the trace was complete enough to trust the diagnosis.
+                  This section flags whether the technical trace was complete enough to trust the diagnosis.
                 </div>
               )}
             </section>

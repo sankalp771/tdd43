@@ -1,10 +1,12 @@
 # Trace Debugger
 
-**Trace Debugger helps developers inspect AI agent runs, surface likely failure modes, and turn opaque outputs into evidence-backed fixes.**
+Github link : https://github.com/sankalp771/tdd43
+
+**Trace Debugger helps developers inspect AI coding and technical assistant runs, surface likely failure modes, and turn opaque outputs into evidence-backed fixes.**
 
 ## Overview
 
-Trace Debugger is a lightweight debugging interface for agentic systems. Instead of stopping at "the model answered," it analyzes a visible trace and asks:
+Trace Debugger is a lightweight debugging interface for AI coding and technical assistant workflows. Instead of stopping at "the model answered," it analyzes a visible trace and asks:
 
 - What most likely went wrong?
 - What evidence supports that diagnosis?
@@ -15,7 +17,7 @@ The result is a structured report with a likely root cause, supporting findings,
 ## What It Does
 
 Trace Debugger can analyze:
-- pasted chat transcripts
+- pasted coding chats and technical transcripts
 - tool traces
 - curated sample failures
 - imported conversations captured through a Chrome extension bridge
@@ -35,6 +37,8 @@ AI agents often fail in ways that are difficult to diagnose:
 - they stop before verification
 - they answer beyond the limits of the available context
 
+That problem is especially painful in technical workflows, where a plausible but unsupported answer can waste debugging time, mislead implementation, or hide an incomplete fix.
+
 Trace Debugger makes those failure patterns legible. It is designed as an early step toward better observability and evaluation tooling for agentic applications.
 
 ## Key Features
@@ -44,6 +48,17 @@ Trace Debugger makes those failure patterns legible. It is designed as an early 
 - **Actionable fixes:** output includes concrete ways to improve prompts, workflow, or validation
 - **Real trace import:** a Chrome extension bridge can capture visible conversations from supported chat UIs
 - **Attachment-aware review mode:** imported traces are reviewed more cautiously when the visible scrape may omit multimodal context
+- **Technical focus:** optimized for coding, developer-tooling, and other technical assistant traces rather than open-ended general conversation
+
+## Intended Scope
+
+Trace Debugger is intentionally focused on:
+- coding assistants
+- developer tooling agents
+- technical Q&A traces
+- implementation, debugging, and workflow-oriented conversations
+
+It is not currently optimized as a universal analyzer for every topic.
 
 ## Tech Stack
 
@@ -96,7 +111,7 @@ The extension captures the visible conversation from the active tab and opens Tr
 
 ## Current Scope
 
-This prototype is strongest on visible text traces. Imported runs may reference files, screenshots, or images that are not fully represented in the scraped text, so the app uses a more cautious attachment-aware review mode for those cases.
+This prototype is strongest on visible technical text traces. Imported runs may reference files, screenshots, or images that are not fully represented in the scraped text, so the app uses a more cautious attachment-aware review mode for those cases.
 
 ## Vision
 
